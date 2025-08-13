@@ -27,7 +27,6 @@ class Message:
 class FloodEvent(Message):
     time: pd.Timestamp
     depth: float
-    return_period: float # THIS IS NEW FROM MARK
     asset: "Asset"
     
 @dataclass
