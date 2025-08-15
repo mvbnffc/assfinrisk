@@ -94,7 +94,7 @@ class FloodExceedanceCurve:
                 self.curve_function = None
                 self.min_depth = 0
                 self.max_depth = 0  
-                self.depths
+                self.depths = np.array([self.flood_protection_depth])
                 self.probabilities = np.array([])
                 return
         
