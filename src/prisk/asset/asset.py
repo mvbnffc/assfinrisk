@@ -132,7 +132,8 @@ class Asset:
     @property
     def exceedance_curve(self):
         if not hasattr(self, '_exceedance_curve'):
-            self._exceedance_curve = FloodExceedanceCurve(self.flood_exposure)
+            self._exceedance_curve = FloodExceedanceCurve(self.flood_exposure,
+            flood_protection=self.flood_protection)
         return self._exceedance_curve
 
     @property
