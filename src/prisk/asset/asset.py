@@ -161,7 +161,7 @@ class Asset:
         """
         expected_damage = 0
         for flood_exposure in self.flood_exposure:
-            impact_depth = round(max(0, flood_exposure.depth - self.flood_protection), 2)
+            impact_depth = round(flood_exposure.depth, 2)
             expected_damage += self.flood_damage_curve.loc[impact_depth].damage\
                                      * flood_exposure.poisson_probability \
                                      * self.replacement_cost
@@ -206,7 +206,7 @@ class Asset:
         time : pd.Timestamp
             The time of the flood event
         """
-        impact_depth = round(max(0, depth - self.flood_protection), 2)
+        impact_depth = round(depth, 2)
         damage = self.flood_damage_curve.loc[impact_depth].damage
         production = self.flood_damage_curve.loc[impact_depth].production
         year = int(np.floor(time))
