@@ -3,6 +3,7 @@ import plotly.graph_objects as go
 import numpy as np
 
 from prisk.insurance.industry import Insurance
+from prisk.flood import FloodExceedanceCurve
 
 from typing import Literal
 
@@ -127,6 +128,12 @@ class Asset:
     @property
     def total_insurance_adjustments(self) -> float:
         return np.sum(self.insurance_adjustment_path * (1 - self.discount_rate) ** np.arange(self._TIME_HORIZON))
+    
+    @property
+    def exceedance_curve(self):
+        if not hasattr(self, '_exceedance_curve'):
+            self._exceedance_curve = FloodExceedanceCurve(self.flood_exposure)
+        return self._exceedance_curve
 
     @property
     def expected_damage(self) -> float:
