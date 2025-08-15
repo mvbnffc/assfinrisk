@@ -155,16 +155,34 @@ class Asset:
 
     def update_expected_damage(self) -> None:
         """
-        The expected damages can be derived based on the flood damage curves, the flood exposure
-        and the flood protection of the asset. The expected damage is the sum of the damage
-        of each flood exposure event, weighted by the Poisson probability of the flood event.
+        Calculate expected damages using only flood exposures above protection level.
+        This ensures consistency with the truncated exceedance curve simulation.
         """
+        if not self.flood_exposure:
+            self.__expected_damage = 0.0
+            return
+        
+        # Get protection depth from exceedance curve
+        if hasattr(self, '_exceedance_curve'):
+            protection_depth = self.exceedance_curve.flood_protection_depth
+        else:
+            # If exceedance curve hasn't been created yet, create it to get protection depth
+            if self.flood_protection > 0:
+                temp_curve = self.exceedance_curve  # This will create it
+                protection_depth = temp_curve.flood_protection_depth
+            else:
+                protection_depth = 0.0
+        
         expected_damage = 0
         for flood_exposure in self.flood_exposure:
-            impact_depth = round(flood_exposure.depth, 2)
-            expected_damage += self.flood_damage_curve.loc[impact_depth].damage\
-                                     * flood_exposure.poisson_probability \
-                                     * self.replacement_cost
+            # Only include exposures above protection level
+            if flood_exposure.depth > protection_depth:
+                impact_depth = round(flood_exposure.depth, 2)
+                if impact_depth in self.flood_damage_curve.index:
+                    expected_damage += self.flood_damage_curve.loc[impact_depth].damage \
+                                        * flood_exposure.poisson_probability \
+                                        * self.replacement_cost
+        
         self.__expected_damage = expected_damage
 
     def add_insurer(self, insurer: 'Insurance') -> None:
@@ -216,7 +234,7 @@ class Asset:
             self._insurer.payout(self.replacement_cost*damage)
         # Install flood protection
         if self.rebuild_strategy == "build_back_better" and damage > 0:
-            self.flood_protection = depth
+            self.flood_protection = depth # TODO: this needs changing to account for RETURN PERIOD
             self.update_expected_damage()
         elif self.rebuild_strategy == "rebuild":
             pass
