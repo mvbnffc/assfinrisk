@@ -3,7 +3,7 @@ from typing import Optional, List
 
 import numpy as np
 import pandas as pd
-from scipy.stats import poisson
+from scipy.stats import poisson, uniform
 from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 
@@ -267,6 +267,34 @@ class FloodEntitySim:
                 FloodEvent(time, exposure.depth, self.entity).send(kernel=kernel)
                 time += np.random.exponential(exposure.return_period)
 
+    def _simulate_exceedance_poisson(self, time_horizon: float, kernel):
+        """ Simulate flooding using the Poisson model and the exceedance curve
+        
+        Parameters
+        ----------
+        time_horizon : float
+            The time horizon of the simulation in years
+        """
+        if not self.entity.flood_exposure:
+            return
+        
+        exceedance_curve = self.entity.exceedance_curve
+        base_annual_rate = 0.5  # 2-year return period
+        
+        time = np.random.exponential(1.0 / base_annual_rate)
+        
+        while time < time_horizon:
+            u = uniform.rvs()
+            target_probability = u * base_annual_rate
+            
+            if target_probability > 0:
+                flood_depth = exceedance_curve.sample_depth_from_probability(target_probability)
+                
+                if flood_depth > 0:
+                    FloodEvent(time, flood_depth, self.entity).send(kernel=kernel)
+            
+            time += np.random.exponential(1.0 / base_annual_rate)
+
     def simulate(self, time_horizon: float, kernel):
         """ Simulate the floodings 
         
@@ -279,4 +307,6 @@ class FloodEntitySim:
             np.random.seed(self.random_seed)
         if self.model == "poisson":
             self._simulate_poisson(time_horizon, kernel)
+        elif self.model == "exceedance_poisson":
+            self._simulate_exceedance_poisson(time_horizon, kernel)
 
