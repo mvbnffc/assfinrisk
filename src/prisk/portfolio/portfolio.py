@@ -44,6 +44,14 @@ class Portfolio:
     def positions(self):
         return pd.DataFrame(self.__positions)
     
+    def update_exceedance_curves(self):
+        '''
+        Update the exceedance curves of all assets in the portfolio.
+        Useful when new flood protection measures have been implemented.
+        '''
+        for asset in self.assets.asset:
+            asset.update_exceedance_curve()
+    
     def reset(self):
         for asset in self.assets:
             asset.reset()

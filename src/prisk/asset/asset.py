@@ -153,6 +153,14 @@ class Asset:
         self.update_expected_damage()
         assert self.npv == self.base_value, "The NPV is not reset to the base value."
 
+    def update_exceedance_curve(self) -> None:
+        """
+        Update the asset's exceedance curve. 
+        Useful when new flood protection measures have been implmented.
+        """
+        self._exceedance_curve = FloodExceedanceCurve(self.flood_exposure,
+                                                        flood_protection=self.flood_protection)
+
     def update_expected_damage(self) -> None:
         """
         Calculate expected damages using only flood exposures above protection level.

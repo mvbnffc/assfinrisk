@@ -130,6 +130,16 @@ class Holding:
     
     @property
     def original_revenue(self)  -> float:
+        revenue = []
+        for asset in self.assets:
+            print(asset.name)
+            print('sum of revenue path:', sum(asset.revenue_path))
+            print('ownership multiplier:', self.ownership[asset], 'revenue path divisor:', len(asset.revenue_path))
+            print('revenue:', sum(asset.revenue_path) * self.ownership[asset]/len(asset.revenue_path))
+            revenue.append(sum(asset.revenue_path) * self.ownership[asset]/len(asset.revenue_path))
+        print('Revenue list:', revenue) 
+        print('Total original revenue:', sum(revenue))
+        print(sum(revenue))
         return sum([sum(asset.revenue_path) * self.ownership[asset]/len(asset.revenue_path) for asset in self.assets])
     
     @property
@@ -150,6 +160,14 @@ class Holding:
         # wide stress test). The parameters have been adjusted such that the delta_pd
         # is comparable to the merton model
         return 0.454*self.delta_leverage - 0.533*self.delta_profitability
+    
+    def update_exceedance_curves(self) -> None:
+        ''' 
+        Update the exceedance curves of all assets in the holding firm.
+        Useful when new flood protection measures have been implemented.
+        '''
+        for asset in self.assets.asset:
+            asset.update_exceedance_curve()
     
 
 
