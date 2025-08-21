@@ -73,6 +73,10 @@ class Holding:
         return sum([asset.base_value * self.ownership[asset] for asset in self.assets])
     
     @property
+    def baseline_replacement_costs(self) -> float:
+        return sum([asset.replacement_cost * self.ownership[asset] for asset in self.assets])
+    
+    @property
     def total_replacement_costs(self) -> float:
         return sum([asset.total_replacement_costs * self.ownership[asset] for asset in self.assets])
     
