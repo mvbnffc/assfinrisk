@@ -53,17 +53,19 @@ class FloodExceedanceCurve:
             self.flood_protection = 0
             return
         
-        # Want to make exceedance probability curve go to RP=2 (which will equal 0 depth)
-        all_exposures = self.exposures.copy() # Add zero depth exposure for RP=2
-        zero_depth_exposure = FloodExposure(return_period=2, depth=0)
-        all_exposures.append(zero_depth_exposure)
-        
+        # Add zero depth exposure for RP=2 (50% annual probability)
+        all_exposures = self.exposures.copy()
+        # For now, let's work with the existing exposures
         # Sort by depth (ascending)
         sorted_exposures = sorted(all_exposures, key=lambda x: x.depth)
 
         # Extract depths and probabilities
         depths = np.array([exposure.depth for exposure in sorted_exposures])
         probabilities = np.array([exposure.probability for exposure in sorted_exposures])
+
+        # Add a zero depth point with high probability (50% - 2 year return period)
+        depths = np.concatenate(([0.0], depths))
+        probabilities = np.concatenate(([0.5], probabilities))
 
         # Calculate the protection details
         if self.flood_protection > 0:
@@ -118,9 +120,17 @@ class FloodExceedanceCurve:
 
         # Create interpolation function
         if len(depths) > 1:
-            log_probs = np.log(probabilities)
+            # Remove any duplicate depths that might cause interpolation issues
+            unique_indices = np.unique(depths, return_index=True)[1]
+            unique_depths = depths[unique_indices]
+            unique_probabilities = probabilities[unique_indices]
+            
+            # Ensure probabilities are positive for log interpolation
+            unique_probabilities = np.maximum(unique_probabilities, 1e-10)
+            
+            log_probs = np.log(unique_probabilities)
             self.curve_function = interp1d(
-                depths, 
+                unique_depths, 
                 log_probs, 
                 kind='linear',
                 bounds_error=False, 
@@ -145,14 +155,8 @@ class FloodExceedanceCurve:
         return np.exp(log_prob)
     
     def return_period(self, depth: float) -> float:
-        """
-        Get the return period for a given depth
-        """
-        if self.curve_function is None:
-            return float('inf')
-        
         prob = self.exceedance_probability(depth)
-        if prob == 0:
+        if prob == 0 or prob >= 1:
             return float('inf')
         
         return 1 / prob
@@ -165,7 +169,11 @@ class FloodExceedanceCurve:
             return 0.0
         
         # If probability is higher than protection probability, return 0 depth 
-        if probability > self.protection_probability:
+        if self.protection_probability > 0 and probability > self.protection_probability:
+            return 0.0
+
+        # Handle edge cases
+        if len(self.probabilities) == 0:
             return 0.0
         
         # If probability is outside the range of the curve, return min or max depth
