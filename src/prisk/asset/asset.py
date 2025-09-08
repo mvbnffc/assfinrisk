@@ -291,6 +291,52 @@ class Asset:
         )
 
         fig.show()
+
+    def plot_simple_risk(self) -> None:
+        '''
+        Same as above but without insurance adjustments
+        '''
+        fig = go.Figure(go.Waterfall(
+            name = "PRISK - Waterfall", 
+            orientation = "v",
+            measure = ["relative", "relative", "relative", "total"],
+            x = ["Base Value", "Capital Damagages", "Business disruptions", "Adjusted Value"],
+            textposition = "outside",
+            text = ["{:,.2f}M".format(self.base_value/1e6), 
+                    "{:,.2f}M".format(-self.total_replacement_costs/1e6), 
+                    "{:,.2f}M".format(-self.total_business_disruption/1e6), 
+                    "{:,.2f}M".format(self.npv/1e6)],
+            y = [self.base_value, 
+                 -self.total_replacement_costs,
+                -self.total_business_disruption,
+                 self.npv],
+            connector = {"line":{"color":"rgb(63, 63, 63)"}},
+        ))
+
+        fig.update_layout(
+                # title = "Asset-level Impacts",
+                showlegend = False,
+                template="simple_white",
+                margin=dict(l=20, r=20, t=40, b=20),
+                xaxis_title="Firm value impacts: {0}".format(self.name),
+                yaxis_title="Value",
+                yaxis_tickprefix="$",
+                yaxis_tickformat=",",
+                yaxis_showgrid=True,
+        )
+        
+        # TEMP FIX for figure plotting
+        y_top = max(
+            self.base_value,
+            self.base_value - self.total_replacement_costs,
+            self.base_value - self.total_business_disruption - self.total_replacement_costs,
+            self.npv
+)
+        fig.update_traces(cliponaxis=False)
+        fig.update_yaxes(range=[None, y_top * 1.05])   # add headroom
+        # fig.update_layout(margin=dict(t=100))          # add extra top margin
+
+        fig.show()
     
 
 class PowerPlant(Asset):
